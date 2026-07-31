@@ -1,0 +1,1820 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>Rapido – Driver Verification Prototype</title>
+<link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700;800;900&family=Google+Sans:wght@500;700;800&display=swap" rel="stylesheet"/>
+<style>
+/* ─── RESET & VARS ─── */
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+:root{
+  --rapido-yellow:#FFB800;
+  --rapido-yellow-bright:#FFC107;
+  --rapido-yellow-pill:#FFD54F;
+  --rapido-yellow-light:#FFF8E1;
+  --green:#00C853;
+  --red:#F44336;
+  --surface:#FFFFFF;
+  --surface2:#F7F7F7;
+  --on-surface:#000000;
+  --shadow-sheet:0 -8px 32px rgba(0,0,0,.15);
+  --shadow1:0 1px 3px rgba(0,0,0,.12);
+  --shadow2:0 4px 12px rgba(0,0,0,.15);
+}
+body{
+  font-family:'Roboto',sans-serif;
+  background:linear-gradient(135deg,#0a0b10 0%,#1a1c29 50%,#121420 100%);
+  min-height:100vh; display:flex; align-items:center;
+  justify-content:center; padding:24px 16px;
+  -webkit-font-smoothing:antialiased;
+}
+
+/* ─── SCENE ─── */
+.scene{display:flex;flex-direction:column;align-items:center;gap:20px;width:100%;}
+.scene-label{color:rgba(255,255,255,.5);font-size:11px;letter-spacing:.12em;text-transform:uppercase;font-weight:600;}
+
+/* ─── ANDROID PHONE SHELL ─── */
+.phone{
+  width:360px;
+  height:780px;
+  background:#fff;
+  border-radius:32px;
+  position:relative;
+  display:flex;
+  flex-direction:column;
+  overflow:hidden;
+  box-shadow:
+    0 0 0 2px #222,
+    0 0 0 3px #151515,
+    0 0 0 10px #0d0d0d,
+    0 24px 60px rgba(0,0,0,.7);
+}
+
+/* Punch-hole camera */
+.phone::before{
+  content:'';
+  position:absolute;
+  top:8px; left:50%;
+  transform:translateX(-50%);
+  width:11px; height:11px;
+  background:#0a0a0a;
+  border-radius:50%;
+  z-index:300;
+  box-shadow:0 0 0 1px #222;
+}
+
+/* ─── STATUS BAR ─── */
+.android-status{
+  height:32px;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  padding:4px 18px 0;
+  flex-shrink:0;
+  position:relative;
+  z-index:20;
+  background:white;
+  transition:background .2s, color .2s;
+}
+.android-status.dark-mode{
+  background:#0a0a0a;
+  color:white;
+}
+.status-time{font-size:12px;font-weight:700;letter-spacing:-.01em;}
+.status-right{display:flex;align-items:center;gap:6px;}
+
+/* ─── SCREENS ─── */
+.screen{display:none;flex-direction:column;flex:1;overflow:hidden;position:relative;}
+.screen.active{display:flex;}
+
+/* ─── ANDROID GESTURE BAR ─── */
+.gesture-bar{
+  height:18px;
+  display:flex;align-items:center;justify-content:center;
+  background:white;
+  flex-shrink:0;
+  transition:background .2s;
+  position:relative;
+  z-index:40;
+}
+.gesture-bar.dark-mode{background:#0a0a0a;}
+.gesture-pill{width:120px;height:4px;background:#000000;border-radius:2px;transition:background .2s;}
+.gesture-bar.dark-mode .gesture-pill{background:#FFFFFF;}
+
+/* ─── EXACT HEADER FROM REFERENCE ─── */
+.rapido-header{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  padding:8px 16px 10px;
+  background:white;
+  flex-shrink:0;
+  border-bottom:1px solid #F5F5F5;
+  position:relative;
+  z-index:20;
+}
+
+/* Logo with yellow dot matrix */
+.rapido-brand{
+  display:flex;
+  align-items:center;
+  gap:6px;
+}
+.rapido-dots{
+  display:grid;
+  grid-template-columns:repeat(3,4px);
+  gap:2.5px;
+}
+.rapido-dot{width:4px;height:4px;background:#FFC107;border-radius:1px;}
+
+.rapido-title{
+  font-size:24px;
+  font-weight:900;
+  color:#000000;
+  letter-spacing:-1px;
+  font-family:'Google Sans',sans-serif;
+  line-height:1;
+}
+
+/* Header Online Chip */
+.header-online-pill{
+  background:#FFD54F;
+  border-radius:100px;
+  padding:7px 14px;
+  display:flex;
+  align-items:center;
+  gap:6px;
+  font-size:12px;
+  font-weight:700;
+  color:#000000;
+  box-shadow:0 1px 3px rgba(0,0,0,.08);
+}
+.online-dot-black{
+  width:7px;
+  height:7px;
+  background:#000000;
+  border-radius:50%;
+}
+
+/* Notification Bell with Badge */
+.header-bell-btn{
+  position:relative;
+  background:transparent;
+  border:none;
+  cursor:pointer;
+  display:grid;
+  place-items:center;
+  width:36px;
+  height:36px;
+}
+.bell-badge{
+  position:absolute;
+  top:2px;
+  right:1px;
+  width:16px;
+  height:16px;
+  background:#FFC107;
+  border-radius:50%;
+  display:grid;
+  place-items:center;
+  font-size:10px;
+  font-weight:800;
+  color:#000000;
+  border:1.5px solid white;
+}
+
+/* ─── MAP STYLES ─── */
+.map-container{
+  flex:1;
+  background:#EBF3F5;
+  position:relative;
+  overflow:hidden;
+}
+.map-bg-grid{
+  position:absolute;
+  inset:0;
+  background-image:
+    linear-gradient(rgba(0,0,0,.03) 1px,transparent 1px),
+    linear-gradient(90deg,rgba(0,0,0,.03) 1px,transparent 1px);
+  background-size:20px 20px;
+}
+.map-pin-pulse{
+  position:absolute;
+  top:38%; left:50%;
+  transform:translate(-50%,-50%);
+  width:28px; height:28px;
+  background:rgba(25,118,210,.18);
+  border-radius:50%;
+  display:grid; place-items:center;
+}
+.map-pin-core{
+  width:14px; height:14px;
+  background:#1976D2;
+  border-radius:50%;
+  border:2.5px solid white;
+  box-shadow:0 2px 6px rgba(0,0,0,.25);
+}
+
+/* ─── SMART ANIMATED TOASTER OVERLAY & SHEET ─── */
+.smart-backdrop-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.38);
+  backdrop-filter: blur(3px);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.5s ease;
+  z-index: 25;
+}
+
+.smart-backdrop-overlay.visible {
+  opacity: 1;
+}
+
+.toaster-sheet{
+  background:white;
+  border-radius:32px 32px 0 0;
+  padding:12px 24px 24px;
+  box-shadow:var(--shadow-sheet);
+  flex-shrink:0;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  text-align:center;
+}
+
+.toaster-sheet.smart-toaster {
+  position: absolute;
+  bottom: 50px;
+  left: 0; right: 0;
+  transform: translateY(100%);
+  opacity: 0;
+  pointer-events: none;
+  transition: transform 0.65s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.45s ease;
+  z-index: 30;
+  border-radius: 32px 32px 0 0;
+  box-shadow: 0 -12px 40px rgba(0,0,0,0.22);
+}
+
+.toaster-sheet.smart-toaster.visible {
+  transform: translateY(0);
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.toaster-sheet.smart-toaster.visible .smart-hero-svg {
+  animation: smartHeroPop 0.7s cubic-bezier(0.34, 1.56, 0.64, 1) 0.12s both;
+}
+
+@keyframes smartHeroPop {
+  0% { transform: scale(0.6) rotate(-10deg); opacity: 0; }
+  70% { transform: scale(1.08) rotate(3deg); opacity: 1; }
+  100% { transform: scale(1) rotate(0deg); opacity: 1; }
+}
+
+.sheet-handle-bar{
+  width:36px;
+  height:4px;
+  background:#E0E0E0;
+  border-radius:2px;
+  margin-bottom:12px;
+}
+
+/* Hero Illustration Container */
+.hero-illustration-container{
+  margin-bottom:14px;
+  display:grid;
+  place-items:center;
+}
+
+/* Sheet Text */
+.sheet-main-title{
+  font-size:22px;
+  font-weight:800;
+  color:#000000;
+  margin-bottom:10px;
+  font-family:'Google Sans',sans-serif;
+  letter-spacing:-.3px;
+}
+
+.sheet-sub-text{
+  font-size:14px;
+  color:#333333;
+  line-height:1.45;
+  margin-bottom:20px;
+  max-width:290px;
+  font-weight:400;
+}
+
+/* Sheet Checklist Items */
+.sheet-checklist-container{
+  width:100%;
+  display:flex;
+  flex-direction:column;
+  gap:14px;
+  margin-bottom:24px;
+  padding-left:6px;
+}
+
+.checklist-row{
+  display:flex;
+  align-items:center;
+  gap:12px;
+  text-align:left;
+}
+
+.checklist-icon-yellow{
+  width:26px;
+  height:26px;
+  background:#FFC107;
+  border-radius:50%;
+  display:grid;
+  place-items:center;
+  flex-shrink:0;
+  box-shadow:0 1px 3px rgba(0,0,0,.15);
+}
+
+.checklist-row-text{
+  font-size:14px;
+  font-weight:500;
+  color:#111111;
+  letter-spacing:-.1px;
+}
+
+/* Primary Action Button */
+.btn-verification-start{
+  width:100%;
+  padding:15px;
+  background:#FFC107;
+  border:none;
+  border-radius:12px;
+  font-size:16px;
+  font-weight:700;
+  color:#000000;
+  cursor:pointer;
+  transition:all .15s;
+  box-shadow:0 2px 6px rgba(255,193,7,.4);
+  font-family:'Google Sans',sans-serif;
+}
+.btn-verification-start:active{
+  transform:scale(.98);
+  background:#E5A600;
+}
+
+/* ─── EXACT BOTTOM NAVIGATION FROM REFERENCE ─── */
+.reference-bottom-nav{
+  display:flex;
+  align-items:center;
+  justify-content:space-around;
+  background:white;
+  border-top:1px solid #F0F0F0;
+  padding:8px 0 4px;
+  flex-shrink:0;
+  position:relative;
+  z-index:40;
+}
+
+.ref-nav-item{
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  gap:3px;
+  font-size:10px;
+  font-weight:600;
+  color:#666666;
+  cursor:pointer;
+  position:relative;
+}
+
+.ref-nav-item.active{
+  color:#000000;
+}
+
+.ref-nav-icon-container{
+  position:relative;
+  display:grid;
+  place-items:center;
+}
+
+.yellow-inbox-dot{
+  position:absolute;
+  top:-1px;
+  right:-1px;
+  width:7px;
+  height:7px;
+  background:#FFC107;
+  border-radius:50%;
+  border:1px solid white;
+}
+
+/* ─── STEPPER ─── */
+.stepper{display:flex;align-items:flex-start;padding:0 16px 0;margin-bottom:4px;}
+.stp{display:flex;flex-direction:column;align-items:center;gap:4px;cursor:pointer;}
+.stp-circle{
+  width:28px;height:28px;border-radius:50%;
+  display:grid;place-items:center;
+  font-size:12px;font-weight:700;
+  border:2px solid #E0E0E0;
+  color:#9E9E9E;background:white;
+  transition:all .25s;flex-shrink:0;
+}
+.stp-circle.active{background:#FFC107;border-color:#FFC107;color:#000;}
+.stp-circle.done{background:#00C853;border-color:#00C853;color:white;font-size:0;}
+.stp-circle.done::after{content:'✓';font-size:13px;}
+.stp-circle.error{background:#F44336;border-color:#F44336;color:white;font-size:0;}
+.stp-circle.error::after{content:'!';font-size:13px;}
+.stp-label{font-size:9px;font-weight:600;color:#9E9E9E;letter-spacing:.04em;text-align:center;max-width:56px;line-height:1.3;}
+.stp-label.active{color:#E5A600;}
+.stp-label.done{color:#009624;}
+.stp-connector{flex:1;height:2px;background:#E0E0E0;margin:13px 4px 0;transition:background .3s;}
+.stp-connector.done{background:#00C853;}
+
+/* ─── TOP APP BAR FOR INNER SCREENS ─── */
+.app-bar{
+  display:flex;align-items:center;gap:8px;
+  padding:0 4px;
+  height:52px;
+  flex-shrink:0;
+  background:white;
+}
+.icon-btn{
+  width:40px;height:40px;border-radius:50%;
+  background:transparent;border:none;cursor:pointer;
+  display:grid;place-items:center;
+}
+.app-bar-title{font-size:18px;font-weight:700;color:#000;font-family:'Google Sans',sans-serif;flex:1;}
+
+/* ─── SAFETY PAGE CLEAN BIKE STYLES ─── */
+.safety-bike-wrapper {
+  position: relative;
+  width: 100%;
+  max-width: 270px;
+  margin: 6px auto 14px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.safety-glow-aura {
+  position: absolute;
+  top: 50%; left: 50%;
+  transform: translate(-50%, -50%);
+  width: 220px; height: 140px;
+  background: radial-gradient(ellipse at center, rgba(255, 193, 7, 0.28) 0%, rgba(255, 193, 7, 0) 70%);
+  border-radius: 50%;
+  pointer-events: none;
+  animation: auraPulse 3.5s ease-in-out infinite alternate;
+}
+@keyframes auraPulse {
+  0% { transform: translate(-50%, -50%) scale(0.9); opacity: 0.5; }
+  100% { transform: translate(-50%, -50%) scale(1.15); opacity: 0.95; }
+}
+
+.safety-bike-img {
+  width: 100%;
+  height: auto;
+  max-height: 175px;
+  object-fit: contain;
+  position: relative;
+  z-index: 2;
+  filter: drop-shadow(0 8px 16px rgba(0,0,0,0.12));
+  animation: floatBike 3.5s ease-in-out infinite alternate;
+}
+@keyframes floatBike {
+  0% { transform: translateY(0px); }
+  100% { transform: translateY(-5px); }
+}
+
+/* ─── CAMERA UI ─── */
+.camera-fill{flex:1;background:#0a0a0a;position:relative;overflow:hidden;}
+.cam-gradient{position:absolute;inset:0;background:radial-gradient(ellipse at 50% 40%,#1c1c1c,#050505);}
+
+/* Correct Vertically Flipped Head Oval Frame (Wider at top, narrower at chin) */
+.selfie-oval{
+  position:absolute;top:50%;left:50%;
+  transform:translate(-50%,-56%);
+  width:195px;height:235px;
+  border:2px dashed rgba(255,193,7,.85);
+  border-radius:50% 50% 50% 50% / 42% 42% 58% 58%;
+  box-shadow:0 0 0 2000px rgba(0,0,0,.55);
+}
+.scan-line-oval{
+  position:absolute;top:20%;left:50%;transform:translateX(-50%);
+  width:180px;height:2px;
+  background:linear-gradient(90deg,transparent,#FFC107,transparent);
+  box-shadow:0 0 8px #FFC107;
+  animation:scanMotion 2.2s ease-in-out infinite alternate;
+}
+@keyframes scanMotion{
+  0%{top:22%;}
+  100%{top:65%;}
+}
+
+/* ─── VEHICLE PHOTO CAMERA WITH USER REAL REAR PHOTO ─── */
+.vehicle-photo-feed {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  opacity: 0.92;
+  transform: scale(0.85);
+  transform-origin: center 46%;
+}
+
+.vehicle-rect-overlay{
+  position:absolute;top:46%;left:50%;
+  transform:translate(-50%,-50%);
+  width:300px;height:290px;
+  border:2px dashed rgba(255,193,7,.9);
+  border-radius:20px;
+  box-shadow:0 0 0 2000px rgba(0,0,0,.5);
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:flex-end;
+  padding-bottom:18px;
+}
+.corner{position:absolute;width:22px;height:22px;border-color:#FFC107;border-style:solid;}
+.corner.tl{top:-2px;left:-2px;border-width:3.5px 0 0 3.5px;border-radius:6px 0 0 0;}
+.corner.tr{top:-2px;right:-2px;border-width:3.5px 3.5px 0 0;border-radius:0 6px 0 0;}
+.corner.bl{bottom:-2px;left:-2px;border-width:0 0 3.5px 3.5px;border-radius:0 0 0 6px;}
+.corner.br{bottom:-2px;right:-2px;border-width:0 3.5px 3.5px 0;border-radius:0 0 6px 0;}
+
+.plate-scan-box {
+  border:2.5px solid #FFC107;
+  border-radius:8px;
+  padding:4px 14px;
+  background:rgba(255, 193, 7, 0.22);
+  box-shadow:0 0 12px rgba(255, 193, 7, 0.6);
+  font-size:11px;
+  font-weight:900;
+  color:#FFC107;
+  letter-spacing:1.5px;
+  animation:pulsePlate 1.8s infinite alternate;
+}
+@keyframes pulsePlate {
+  0% { box-shadow:0 0 4px rgba(255, 193, 7, 0.4); }
+  100% { box-shadow:0 0 16px rgba(255, 193, 7, 0.85); }
+}
+
+.vehicle-guidance-pill {
+  position: absolute;
+  top: 14px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(0,0,0,0.65);
+  border: 1px solid rgba(255,193,7,0.5);
+  border-radius: 100px;
+  padding: 6px 14px;
+  font-size: 11px;
+  font-weight: 700;
+  color: #FFC107;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  backdrop-filter: blur(4px);
+  z-index: 10;
+}
+
+.cam-hint{position:absolute;bottom:88px;left:0;right:0;text-align:center;font-size:12px;font-weight:600;color:rgba(255,255,255,.9);}
+.cam-bar{position:absolute;bottom:0;left:0;right:0;padding:12px 32px 16px;display:flex;align-items:center;justify-content:space-between;background:linear-gradient(transparent,rgba(0,0,0,.7));}
+.cam-action{width:44px;height:44px;border-radius:50%;background:rgba(255,255,255,.12);border:none;cursor:pointer;display:grid;place-items:center;color:white;}
+.shutter{width:70px;height:70px;border-radius:50%;background:white;border:4px solid rgba(255,255,255,.35);cursor:pointer;display:grid;place-items:center;box-shadow:0 4px 12px rgba(0,0,0,.4);}
+.shutter-inner{width:54px;height:54px;border-radius:50%;background:#FFC107;}
+.plate-tag{position:absolute;bottom:94px;left:50%;transform:translateX(-50%);background:#FFC107;border-radius:6px;padding:4px 14px;font-size:11px;font-weight:800;color:#000;letter-spacing:2px;box-shadow:0 2px 8px rgba(0,0,0,0.3);}
+
+/* ─── SELFIE PREVIEW ─── */
+.preview-wrap{position:relative;display:inline-block;margin:0 auto;}
+.oval-preview{
+  width:164px;height:185px;
+  border-radius:50% 50% 50% 50% / 42% 42% 58% 58%;
+  background:linear-gradient(160deg,#FFE5B4,#FFD580);
+  overflow:hidden;border:3px solid #00C853;
+  box-shadow:0 0 0 5px rgba(0,200,83,.13);
+}
+.done-badge{
+  position:absolute;bottom:-4px;right:-4px;
+  width:38px;height:38px;background:#00C853;
+  border-radius:50%;border:3px solid white;
+  display:grid;place-items:center;color:white;font-size:18px;
+}
+
+/* ─── PROCESSING ─── */
+.proc-body{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px;gap:20px;text-align:center;}
+.spinner{width:88px;height:88px;border:5px solid #EEEEEE;border-top-color:#FFC107;border-radius:50%;animation:spin 1s linear infinite;}
+@keyframes spin{to{transform:rotate(360deg);}}
+
+/* ─── RESULT ─── */
+.result-body{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:20px 24px;gap:16px;text-align:center;}
+.result-icon{width:88px;height:88px;border-radius:50%;display:grid;place-items:center;font-size:44px;color:white;animation:popIn .4s cubic-bezier(.34,1.56,.64,1);}
+.result-icon.success{background:#00C853;box-shadow:0 0 0 14px rgba(0,200,83,.1);}
+.result-icon.fail{background:#F44336;box-shadow:0 0 0 14px rgba(244,67,54,.1);}
+@keyframes popIn{from{transform:scale(0);opacity:0;}to{transform:scale(1);opacity:1;}}
+
+.info-card{background:#F7F7F7;border-radius:12px;width:100%;overflow:hidden;}
+.info-row{display:flex;align-items:center;justify-content:space-between;padding:14px 16px;font-size:14px;font-weight:600;color:#000;}
+.info-row+.info-row{border-top:1px solid #EFEFEF;}
+.fail-card{background:#FFEBEE;border-radius:12px;width:100%;padding:14px 16px;}
+.fail-item{display:flex;align-items:flex-start;gap:8px;font-size:13px;color:#B71C1C;padding:3px 0;}
+.fail-item::before{content:'•';font-size:16px;margin-top:-1px;flex-shrink:0;}
+
+/* ─── INTRO & SAFETY ─── */
+.safety-body{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:16px 24px 20px;text-align:center;gap:12px;}
+.alert-chip{display:flex;align-items:center;gap:8px;background:#FFF8E1;border:1px solid #FFCC02;border-radius:100px;padding:8px 16px;font-size:12px;font-weight:600;color:#F57F17;width:100%;justify-content:center;}
+.intro-body{flex:1;display:flex;flex-direction:column;padding:12px 20px 20px;overflow:auto;}
+.hero-icon{width:76px;height:76px;border-radius:24px;background:#FFF8E1;display:grid;place-items:center;margin:8px auto 20px;}
+
+/* ─── SCREEN 10 (DONE STATE) CLEAN LAYOUT ─── */
+.done-content-area{
+  flex:1;
+  display:flex;
+  flex-direction:column;
+  position:relative;
+  background:#EBF3F5;
+  overflow:hidden;
+}
+
+.done-map-bg{
+  flex:1;
+  position:relative;
+  width:100%;
+  min-height:160px;
+}
+
+.done-cards-container{
+  padding:12px 16px 16px;
+  display:flex;
+  flex-direction:column;
+  gap:12px;
+  background:linear-gradient(180deg, rgba(235,243,245,0) 0%, rgba(235,243,245,0.9) 25%, #EBF3F5 100%);
+  position:relative;
+  z-index:10;
+}
+
+.verified-banner-card{
+  background:#FFFFFF;
+  border-radius:16px;
+  padding:14px 16px;
+  display:flex;
+  align-items:center;
+  gap:14px;
+  box-shadow:0 4px 16px rgba(0,0,0,.08);
+  border:1px solid #EFEFEF;
+  cursor:pointer;
+  transition:transform 0.15s;
+}
+.verified-banner-card:active{
+  transform:scale(0.98);
+}
+
+.verified-icon-circle{
+  width:44px;
+  height:44px;
+  background:#FFF8E1;
+  border-radius:50%;
+  display:grid;
+  place-items:center;
+  flex-shrink:0;
+}
+
+.verified-text-group{
+  flex:1;
+}
+
+.verified-card-title{
+  font-size:15px;
+  font-weight:800;
+  color:#000000;
+  font-family:'Google Sans',sans-serif;
+  line-height:1.2;
+}
+
+.verified-card-sub{
+  font-size:12px;
+  color:#555555;
+  margin-top:3px;
+  line-height:1.35;
+}
+
+.todays-summary-card{
+  background:#FFFFFF;
+  border-radius:16px;
+  padding:16px;
+  box-shadow:0 4px 16px rgba(0,0,0,.06);
+  border:1px solid #EFEFEF;
+}
+
+.summary-card-header{
+  font-size:13px;
+  font-weight:800;
+  color:#000000;
+  font-family:'Google Sans',sans-serif;
+  margin-bottom:12px;
+  letter-spacing:-.1px;
+}
+
+.summary-stats-grid{
+  display:flex;
+  gap:12px;
+}
+
+.summary-stat-box{
+  flex:1;
+  background:#F8F9FA;
+  border-radius:12px;
+  padding:12px 14px;
+  text-align:center;
+  border:1px solid #F0F0F0;
+}
+
+.stat-amount{
+  font-size:22px;
+  font-weight:900;
+  color:#000000;
+  line-height:1.1;
+  font-family:'Google Sans',sans-serif;
+}
+
+.stat-label-text{
+  font-size:11px;
+  font-weight:600;
+  color:#757575;
+  margin-top:4px;
+}
+
+/* ─── SCREEN 11 (RIDER VIEW — DRIVER ON THE WAY) STYLES ─── */
+.rider-top-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 12px;
+  background: white;
+  border-bottom: 1px solid #F0F0F0;
+  flex-shrink: 0;
+  z-index: 20;
+}
+
+.rider-header-title {
+  font-size: 16px;
+  font-weight: 800;
+  color: #000;
+  font-family: 'Google Sans', sans-serif;
+}
+
+.rider-map-view {
+  flex: 1;
+  background: #EBF3F5;
+  position: relative;
+  overflow: hidden;
+}
+
+.rider-driver-pin {
+  position: absolute;
+  top: 32%; left: 30%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  z-index: 10;
+  animation: floatPin 3s ease-in-out infinite alternate;
+}
+@keyframes floatPin {
+  0% { transform: translateY(0); }
+  100% { transform: translateY(-4px); }
+}
+
+.pin-time-chip {
+  background: #000;
+  color: #FFC107;
+  font-size: 10px;
+  font-weight: 800;
+  padding: 3px 9px;
+  border-radius: 100px;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+}
+
+.pin-bike-badge {
+  width: 42px; height: 42px;
+  background: white;
+  border-radius: 50%;
+  border: 2.5px solid #FFC107;
+  display: grid; place-items: center;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+}
+
+.rider-pickup-pin {
+  position: absolute;
+  bottom: 35%; right: 24%;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: white;
+  padding: 6px 14px;
+  border-radius: 100px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+  font-size: 11px;
+  font-weight: 800;
+  color: #000;
+}
+
+.pickup-dot-pulse {
+  width: 8px; height: 8px;
+  background: #00C853;
+  border-radius: 50%;
+  box-shadow: 0 0 0 3px rgba(0, 200, 83, 0.25);
+  animation: greenDotPulse 1.5s infinite;
+}
+
+.rider-bottom-sheet {
+  background: white;
+  border-radius: 28px 28px 0 0;
+  padding: 14px 18px 20px;
+  box-shadow: 0 -8px 32px rgba(0,0,0,0.15);
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  z-index: 20;
+}
+
+.rider-status-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.arrival-time-text {
+  font-size: 18px;
+  font-weight: 900;
+  color: #000;
+  font-family: 'Google Sans', sans-serif;
+}
+
+.eta-pill {
+  background: #E8F5E9;
+  color: #2E7D32;
+  font-size: 11px;
+  font-weight: 800;
+  padding: 4px 10px;
+  border-radius: 100px;
+}
+
+.driver-verified-card {
+  background: #FFF8E1;
+  border: 1px solid #FFE082;
+  border-radius: 16px;
+  padding: 12px 14px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.driver-avatar-wrap {
+  position: relative;
+  flex-shrink: 0;
+}
+
+.driver-avatar-circle {
+  width: 48px; height: 48px;
+  border-radius: 50%;
+  overflow: hidden;
+  border: 2px solid white;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.12);
+}
+
+.badge-check-icon {
+  position: absolute;
+  bottom: -2px; right: -2px;
+  width: 18px; height: 18px;
+  background: #00C853;
+  color: white;
+  border-radius: 50%;
+  border: 2px solid white;
+  font-size: 10px;
+  font-weight: 900;
+  display: grid; place-items: center;
+}
+
+.driver-info-details {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.driver-name-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.driver-name {
+  font-size: 15px;
+  font-weight: 800;
+  color: #000;
+  font-family: 'Google Sans', sans-serif;
+}
+
+.rating-badge {
+  font-size: 12px;
+  font-weight: 800;
+  color: #000;
+}
+
+.verified-driver-pill {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  background: #E8F5E9;
+  border: 1px solid #A5D6A7;
+  border-radius: 100px;
+  padding: 3px 10px;
+  font-size: 11px;
+  font-weight: 800;
+  color: #1B5E20;
+  width: fit-content;
+}
+
+.vehicle-details-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: #F8F9FA;
+  border: 1px solid #EFEFEF;
+  border-radius: 14px;
+  padding: 12px 14px;
+}
+
+.vehicle-model-name {
+  font-size: 14px;
+  font-weight: 800;
+  color: #111;
+  font-family: 'Google Sans', sans-serif;
+}
+
+.vehicle-plate-badge {
+  background: #FFC107;
+  color: #000;
+  font-size: 12px;
+  font-weight: 900;
+  padding: 4px 10px;
+  border-radius: 6px;
+  letter-spacing: 1px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.15);
+}
+
+.rider-action-row {
+  display: flex;
+  gap: 10px;
+}
+
+.rider-action-btn {
+  flex: 1;
+  padding: 12px;
+  border-radius: 12px;
+  font-size: 13px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  cursor: pointer;
+  border: none;
+  font-family: 'Google Sans', sans-serif;
+}
+
+.call-btn {
+  background: #FFC107;
+  color: #000;
+  box-shadow: 0 2px 6px rgba(255,193,7,0.4);
+}
+
+.chat-btn {
+  background: #F5F5F5;
+  color: #333;
+  border: 1px solid #E0E0E0;
+}
+
+/* ─── EXTERNAL PROGRESS & NAV ─── */
+.prog-dots{display:flex;gap:5px;justify-content:center;}
+.d{width:7px;height:7px;border-radius:50%;background:rgba(255,255,255,.2);cursor:pointer;transition:all .25s;}
+.d.active{background:#FFC107;width:22px;border-radius:4px;}
+.d.done{background:rgba(255,255,255,.5);}
+.ext-nav{display:flex;gap:6px;flex-wrap:wrap;justify-content:center;max-width:560px;}
+.ext-nav button{
+  background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.14);
+  color:rgba(255,255,255,.7);padding:5px 12px;border-radius:100px;
+  font-size:11px;cursor:pointer;transition:all .2s;
+  font-family:'Roboto',sans-serif;font-weight:500;
+}
+.ext-nav button:hover,.ext-nav button.an{background:#FFC107;color:#000;border-color:#FFC107;font-weight:700;}
+
+.mt-a{margin-top:auto;}
+</style>
+</head>
+<body>
+
+<div class="scene">
+<div class="scene-label">Rapido · Driver Verification Prototype</div>
+
+<!-- ══════════════ ANDROID PHONE ══════════════ -->
+<div class="phone" id="phone">
+
+  <!-- Transition overlay -->
+  <div id="overlay" style="position:absolute;inset:0;background:white;opacity:0;pointer-events:none;z-index:500;transition:opacity .18s;"></div>
+
+  <!-- ── STATUS BAR ── -->
+  <div class="android-status" id="statusBar">
+    <span class="status-time">9:41 <svg style="display:inline-block;vertical-align:-1px;margin-left:2px;" width="10" height="10" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2L4.5 20.29l.71.71L12 18l6.79 3 .71-.71z"/></svg></span>
+    <div class="status-right">
+      <svg width="15" height="11" viewBox="0 0 17 11" fill="currentColor"><rect x="0" y="8" width="3" height="3" rx="0.5"/><rect x="4.5" y="5.5" width="3" height="5.5" rx="0.5"/><rect x="9" y="3" width="3" height="8" rx="0.5"/><rect x="13.5" y="0" width="3" height="11" rx="0.5"/></svg>
+      <svg width="14" height="11" viewBox="0 0 16 12" fill="currentColor"><path d="M8 9.5a1.5 1.5 0 100 3 1.5 1.5 0 000-3z"/><path d="M3.5 7A6.5 6.5 0 0112.5 7"/><path d="M.5 4A10.5 10.5 0 0115.5 4"/></svg>
+      <svg width="20" height="10" viewBox="0 0 22 11" fill="currentColor"><rect x="0.5" y="0.5" width="18" height="10" rx="2" stroke="currentColor" stroke-width="1" fill="none"/><rect x="2" y="2" width="12" height="7" rx="1"/><path d="M20 3.5v4a1.5 1.5 0 000-4z"/></svg>
+    </div>
+  </div>
+
+  <!-- ══ SCREEN 1: HOME (CONTAINS DONE PAGE CONTENT + SMART TOASTER ANIMATION) ══ -->
+  <div class="screen active" id="screen1">
+    <!-- Header -->
+    <div class="rapido-header">
+      <div class="rapido-brand">
+        <div class="rapido-dots">
+          <div class="rapido-dot"></div><div class="rapido-dot"></div><div class="rapido-dot"></div>
+          <div class="rapido-dot"></div><div class="rapido-dot"></div><div class="rapido-dot"></div>
+        </div>
+        <span class="rapido-title">rapido</span>
+      </div>
+
+      <div class="header-online-pill">
+        <div class="online-dot-black"></div>
+        <span>You're Online</span>
+      </div>
+
+      <button class="header-bell-btn">
+        <svg width="22" height="24" viewBox="0 0 24 24" fill="none" stroke="#000000" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+        <div class="bell-badge">3</div>
+      </button>
+    </div>
+
+    <!-- Done Page Content Layout on Home Screen -->
+    <div class="done-content-area" style="flex:1;">
+      <!-- Upper Map Background -->
+      <div class="done-map-bg">
+        <div class="map-bg-grid"></div>
+        <svg style="position:absolute;inset:0;width:100%;height:100%;" viewBox="0 0 360 220" preserveAspectRatio="none">
+          <line x1="0" y1="110" x2="360" y2="110" stroke="#E2ECEE" stroke-width="14"/>
+          <line x1="180" y1="0" x2="180" y2="220" stroke="#E2ECEE" stroke-width="12"/>
+          <line x1="0" y1="50" x2="360" y2="50" stroke="#EDF4F5" stroke-width="6"/>
+          <line x1="90" y1="0" x2="90" y2="220" stroke="#EDF4F5" stroke-width="6"/>
+          <line x1="270" y1="0" x2="270" y2="220" stroke="#EDF4F5" stroke-width="6"/>
+          <rect x="25" y="10" width="45" height="30" rx="4" fill="#E2F2E5"/>
+          <rect x="200" y="20" width="55" height="40" rx="4" fill="#E2F2E5"/>
+        </svg>
+        <div class="map-pin-pulse"><div class="map-pin-core"></div></div>
+      </div>
+
+      <!-- Today's Summary Card on Home -->
+      <div class="done-cards-container">
+        <div class="todays-summary-card">
+          <div class="summary-card-header">Today's Summary</div>
+          <div class="summary-stats-grid">
+            <div class="summary-stat-box">
+              <div class="stat-amount">₹1,250</div>
+              <div class="stat-label-text">Earnings</div>
+            </div>
+            <div class="summary-stat-box">
+              <div class="stat-amount">6</div>
+              <div class="stat-label-text">Rides</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Smart Backdrop Overlay -->
+    <div class="smart-backdrop-overlay" id="homeBackdrop"></div>
+
+    <!-- Smart Animated Toaster Bottom Sheet -->
+    <div class="toaster-sheet smart-toaster" id="homeToasterSheet">
+      <div class="sheet-handle-bar"></div>
+
+      <!-- Hero Illustration with Pop Animation -->
+      <div class="hero-illustration-container">
+        <svg class="smart-hero-svg" width="104" height="104" viewBox="0 0 104 104" fill="none">
+          <circle cx="52" cy="56" r="44" fill="#FFF5C4"/>
+          <path d="M52 2 v8" stroke="#FFB800" stroke-width="3" stroke-linecap="round"/>
+          <path d="M39 6 L44 13" stroke="#FFB800" stroke-width="3" stroke-linecap="round"/>
+          <path d="M65 6 L60 13" stroke="#FFB800" stroke-width="3" stroke-linecap="round"/>
+          <g transform="translate(31, 35)">
+            <path d="M21 2 L6 8 v14 c0 11 8 19.5 15 21 c7 -1.5 15 -10 15 -21 V8 L21 2 z" 
+                  fill="#FFC107" stroke="#000000" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"/>
+            <path d="M13 21 l5 5 l11 -11" stroke="#000000" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+          </g>
+        </svg>
+      </div>
+
+      <div class="sheet-main-title">Verification Required</div>
+
+      <div class="sheet-sub-text">
+        To assure riders, we occasionally verify that you and your vehicle are the same as registered.
+      </div>
+
+      <div class="sheet-checklist-container">
+        <div class="checklist-row">
+          <div class="checklist-icon-yellow">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#000" stroke-width="2.5"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>
+          </div>
+          <span class="checklist-row-text">Takes less than 30 seconds</span>
+        </div>
+
+        <div class="checklist-row">
+          <div class="checklist-icon-yellow">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#000" stroke-width="2.5"><path d="M12 2L4 6v6c0 5.5 3.8 10.5 8 12 4.2-1.5 8-6.5 8-12V6l-8-4z"/><path d="M9 12l2 2 4-4"/></svg>
+          </div>
+          <span class="checklist-row-text">You can continue after verification</span>
+        </div>
+      </div>
+
+      <button class="btn-verification-start" onclick="goTo(2)">Start Verification</button>
+    </div>
+
+    <!-- Bottom Navigation -->
+    <div class="reference-bottom-nav">
+      <div class="ref-nav-item active" onclick="goTo(1)">
+        <div class="ref-nav-icon-container">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="#FFC107"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>
+        </div>
+        <span>Home</span>
+      </div>
+      <div class="ref-nav-item">
+        <div class="ref-nav-icon-container">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#666" stroke-width="2"><path d="M12 1v22M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+        </div>
+        <span>Earnings</span>
+      </div>
+      <div class="ref-nav-item">
+        <div class="ref-nav-icon-container">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#666" stroke-width="2"><rect x="4" y="4" width="16" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="4" y1="10" x2="20" y2="10"/></svg>
+        </div>
+        <span>Bookings</span>
+      </div>
+      <div class="ref-nav-item">
+        <div class="ref-nav-icon-container">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#666" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+          <div class="yellow-inbox-dot"></div>
+        </div>
+        <span>Inbox</span>
+      </div>
+      <div class="ref-nav-item">
+        <div class="ref-nav-icon-container">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#666" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+        </div>
+        <span>Profile</span>
+      </div>
+    </div>
+    <div class="gesture-bar" id="gBar1"><div class="gesture-pill"></div></div>
+  </div>
+
+  <!-- ══ SCREEN 2: SAFETY CHECK (CLEAN ANIMATED RAPIDO BIKE) ══ -->
+  <div class="screen" id="screen2">
+    <div class="app-bar">
+      <button class="icon-btn" onclick="goTo(1)">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#000" stroke-width="2.5"><path d="M19 12H5M12 5l-7 7 7 7"/></svg>
+      </button>
+    </div>
+    <div class="safety-body">
+      <!-- Warning Badge -->
+      <div style="width:72px;height:72px;background:#FFC107;border-radius:50%;display:grid;place-items:center;font-size:34px;box-shadow:0 0 0 10px rgba(255,193,7,.15);">⚠️</div>
+
+      <!-- Clean Animated Rapido Bike Illustration -->
+      <div class="safety-bike-wrapper">
+        <div class="safety-glow-aura"></div>
+        <img src="rapido_bike.png" alt="Rapido Bike" class="safety-bike-img"/>
+      </div>
+
+      <div style="font-size:22px;font-weight:800;color:#000;font-family:'Google Sans',sans-serif;">Safety First</div>
+      <div style="font-size:13.5px;color:#333;max-width:270px;text-align:center;line-height:1.4;">Please stop your vehicle in a safe place before we start verification.</div>
+
+      <div class="alert-chip">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="#F57F17"><path d="M12 2L1 21h22L12 2zm0 3.5L20.5 19h-17L12 5.5zM11 10v4h2v-4h-2zm0 6v2h2v-2h-2z"/></svg>
+        Vehicle movement detected
+      </div>
+
+      <div style="width:100%;">
+        <button class="btn-verification-start" onclick="goTo(3)">I've Parked</button>
+      </div>
+    </div>
+    <div class="gesture-bar"><div class="gesture-pill"></div></div>
+  </div>
+
+  <!-- ══ SCREEN 3: VERIFICATION INTRO ══ -->
+  <div class="screen" id="screen3">
+    <div class="app-bar">
+      <button class="icon-btn" onclick="goTo(2)">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#000" stroke-width="2.5"><path d="M19 12H5M12 5l-7 7 7 7"/></svg>
+      </button>
+      <div class="app-bar-title">Verification</div>
+    </div>
+
+    <div class="stepper">
+      <div class="stp" onclick="goTo(4)"><div class="stp-circle active">1</div><div class="stp-label active">Selfie</div></div>
+      <div class="stp-connector"></div>
+      <div class="stp" onclick="goTo(6)"><div class="stp-circle">2</div><div class="stp-label">Vehicle</div></div>
+      <div class="stp-connector"></div>
+      <div class="stp" onclick="goTo(7)"><div class="stp-circle">3</div><div class="stp-label">Review</div></div>
+    </div>
+
+    <div class="intro-body">
+      <div class="hero-icon">
+        <svg width="38" height="38" viewBox="0 0 24 24" fill="#FFC107"><path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm0 4c1.4 0 2.8.5 3.86 1.57 2.12 2.12 2.12 5.55 0 7.67C14.8 15.42 13.4 16 12 16s-2.8-.5-3.86-1.57c-2.12-2.12-2.12-5.55 0-7.67C9.2 5.5 10.6 5 12 5z"/></svg>
+      </div>
+
+      <div style="font-size:18px;font-weight:800;color:#000;text-align:center;margin-bottom:8px;font-family:'Google Sans',sans-serif;">Let's verify you & your vehicle</div>
+      <div style="font-size:13px;color:#555;text-align:center;margin-bottom:20px;">This helps us assure riders that they're riding with the right driver on the right vehicle.</div>
+
+      <div style="background:#F7F7F7;border-radius:14px;margin-bottom:20px;overflow:hidden;">
+        <div style="display:flex;align-items:center;gap:14px;padding:14px 16px;border-bottom:1px solid #EFEFEF;">
+          <div style="width:38px;height:38px;background:#FFF8E1;border-radius:50%;display:grid;place-items:center;flex-shrink:0;">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="#FFC107"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
+          </div>
+          <div>
+            <div style="font-size:14px;font-weight:700;color:#000;">Step 1 — Driver Selfie</div>
+            <div style="font-size:12px;color:#666;">Remove helmet & sunglasses</div>
+          </div>
+          <div style="margin-left:auto;width:22px;height:22px;background:#FFC107;border-radius:50%;display:grid;place-items:center;font-size:11px;font-weight:800;color:#000;">1</div>
+        </div>
+        <div style="display:flex;align-items:center;gap:14px;padding:14px 16px;">
+          <div style="width:38px;height:38px;background:#FFF8E1;border-radius:50%;display:grid;place-items:center;flex-shrink:0;">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="#FFC107"><path d="M18.92 6.01C18.72 5.42 18.16 5 17.5 5h-11c-.66 0-1.21.42-1.42 1.01L3 12v8c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-1h12v1c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-8l-2.08-5.99z"/></svg>
+          </div>
+          <div>
+            <div style="font-size:14px;font-weight:700;color:#000;">Step 2 — Vehicle Photo</div>
+            <div style="font-size:12px;color:#666;">Show number plate clearly</div>
+          </div>
+          <div style="margin-left:auto;width:22px;height:22px;background:#EEEEEE;border-radius:50%;display:grid;place-items:center;font-size:11px;font-weight:700;color:#757575;">2</div>
+        </div>
+      </div>
+
+      <div class="mt-a"></div>
+      <button class="btn-verification-start" onclick="goTo(4)">Continue</button>
+    </div>
+    <div class="gesture-bar"><div class="gesture-pill"></div></div>
+  </div>
+
+  <!-- ══ SCREEN 4: DRIVER SELFIE CAM ══ -->
+  <div class="screen" id="screen4">
+    <div class="app-bar" style="background:#0a0a0a;">
+      <button class="icon-btn" onclick="goTo(3)">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5"><path d="M19 12H5M12 5l-7 7 7 7"/></svg>
+      </button>
+      <div class="app-bar-title" style="color:white;">Verification</div>
+    </div>
+
+    <div style="background:#0a0a0a;padding:0 16px 10px;">
+      <div class="stepper" style="margin-bottom:0;">
+        <div class="stp" onclick="goTo(4)"><div class="stp-circle active">1</div><div class="stp-label active">Selfie</div></div>
+        <div class="stp-connector"></div>
+        <div class="stp" onclick="goTo(6)"><div class="stp-circle" style="border-color:rgba(255,255,255,.2);color:rgba(255,255,255,.3);">2</div><div class="stp-label" style="color:rgba(255,255,255,.3);">Vehicle</div></div>
+        <div class="stp-connector"></div>
+        <div class="stp" onclick="goTo(7)"><div class="stp-circle" style="border-color:rgba(255,255,255,.2);color:rgba(255,255,255,.3);">3</div><div class="stp-label" style="color:rgba(255,255,255,.3);">Review</div></div>
+      </div>
+      <div style="padding:4px 0 2px;font-size:11px;color:rgba(255,255,255,.5);font-weight:600;">STEP 1 OF 3</div>
+      <div style="font-size:17px;font-weight:800;color:white;margin-bottom:2px;font-family:'Google Sans',sans-serif;">Take a clear selfie</div>
+      <div style="font-size:12px;color:rgba(255,255,255,.6);">Remove sunglasses/helmet · Face the camera</div>
+    </div>
+
+    <div class="camera-fill">
+      <div class="cam-gradient"></div>
+      <div class="selfie-oval"></div>
+      <div class="scan-line-oval"></div>
+      <div class="cam-hint">Position face inside oval frame</div>
+      <div class="cam-bar">
+        <button class="cam-action" id="flashBtn" onclick="toggleFlash()">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="white"><path d="M7 2v11h3v9l7-12h-4l4-8z"/></svg>
+        </button>
+        <button class="shutter" onclick="goTo(5)"><div class="shutter-inner"></div></button>
+        <div style="width:44px;"></div>
+      </div>
+    </div>
+    <div class="gesture-bar dark-mode"><div class="gesture-pill"></div></div>
+  </div>
+
+  <!-- ══ SCREEN 5: SELFIE CAPTURED ══ -->
+  <div class="screen" id="screen5">
+    <div class="app-bar">
+      <button class="icon-btn" onclick="goTo(4)">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#000" stroke-width="2.5"><path d="M19 12H5M12 5l-7 7 7 7"/></svg>
+      </button>
+      <div class="app-bar-title">Verification</div>
+    </div>
+
+    <div style="padding:0 16px 8px;">
+      <div class="stepper" style="margin-bottom:0;">
+        <div class="stp" onclick="goTo(4)"><div class="stp-circle done"></div><div class="stp-label done">Selfie</div></div>
+        <div class="stp-connector done"></div>
+        <div class="stp" onclick="goTo(6)"><div class="stp-circle active">2</div><div class="stp-label active">Vehicle</div></div>
+        <div class="stp-connector"></div>
+        <div class="stp" onclick="goTo(7)"><div class="stp-circle">3</div><div class="stp-label">Review</div></div>
+      </div>
+    </div>
+
+    <div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:20px;gap:16px;text-align:center;">
+      <div class="preview-wrap">
+        <div class="oval-preview">
+          <svg width="162" height="184" viewBox="0 0 162 184" fill="none">
+            <rect x="56" y="148" width="50" height="36" rx="6" fill="#FFC107"/>
+            <ellipse cx="81" cy="102" rx="52" ry="53" fill="#FDBCB4"/>
+            <path d="M29 99 Q32 48 81 44 Q130 48 133 99 Q124 62 81 60 Q38 62 29 99Z" fill="#3D2314"/>
+            <ellipse cx="63" cy="104" rx="7.5" ry="8.5" fill="white"/>
+            <ellipse cx="99" cy="104" rx="7.5" ry="8.5" fill="white"/>
+            <circle cx="64" cy="105" r="5" fill="#3D2314"/>
+            <circle cx="100" cy="105" r="5" fill="#3D2314"/>
+            <circle cx="66" cy="103" r="2" fill="white"/>
+            <circle cx="102" cy="103" r="2" fill="white"/>
+            <path d="M54 94 Q63 90 72 94" stroke="#3D2314" stroke-width="2.5" stroke-linecap="round" fill="none"/>
+            <path d="M90 94 Q99 90 108 94" stroke="#3D2314" stroke-width="2.5" stroke-linecap="round" fill="none"/>
+            <ellipse cx="81" cy="118" rx="4" ry="3" fill="#E0A090"/>
+            <path d="M67 132 Q81 143 95 132" stroke="#C0706A" stroke-width="2.5" stroke-linecap="round" fill="none"/>
+            <ellipse cx="29" cy="106" rx="8" ry="10" fill="#FDBCB4"/>
+            <ellipse cx="133" cy="106" rx="8" ry="10" fill="#FDBCB4"/>
+          </svg>
+        </div>
+        <div class="done-badge">✓</div>
+      </div>
+
+      <div style="font-size:22px;font-weight:800;color:#000;font-family:'Google Sans',sans-serif;">Selfie Captured!</div>
+      <div style="font-size:14px;color:#555;">Looks good. Ready for step 2.</div>
+
+      <div style="width:100%;display:flex;flex-direction:column;gap:10px;margin-top:8px;">
+        <button class="btn-verification-start" onclick="goTo(6)">Continue</button>
+      </div>
+    </div>
+    <div class="gesture-bar"><div class="gesture-pill"></div></div>
+  </div>
+
+  <!-- ══ SCREEN 6: VEHICLE PHOTO (WITH USER'S REAL RAPIDO BIKE REAR PHOTO) ══ -->
+  <div class="screen" id="screen6">
+    <div class="app-bar" style="background:#0a0a0a;">
+      <button class="icon-btn" onclick="goTo(5)">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5"><path d="M19 12H5M12 5l-7 7 7 7"/></svg>
+      </button>
+      <div class="app-bar-title" style="color:white;">Verification</div>
+    </div>
+
+    <div style="background:#0a0a0a;padding:0 16px 10px;">
+      <div class="stepper" style="margin-bottom:0;">
+        <div class="stp" onclick="goTo(4)"><div class="stp-circle done"></div><div class="stp-label done">Selfie</div></div>
+        <div class="stp-connector done"></div>
+        <div class="stp" onclick="goTo(6)"><div class="stp-circle active">2</div><div class="stp-label active">Vehicle</div></div>
+        <div class="stp-connector"></div>
+        <div class="stp" onclick="goTo(7)"><div class="stp-circle" style="border-color:rgba(255,255,255,.2);color:rgba(255,255,255,.3);">3</div><div class="stp-label" style="color:rgba(255,255,255,.3);">Review</div></div>
+      </div>
+      <div style="padding:4px 0 2px;font-size:11px;color:rgba(255,255,255,.5);font-weight:600;">STEP 2 OF 3</div>
+      <div style="font-size:17px;font-weight:800;color:white;margin-bottom:2px;font-family:'Google Sans',sans-serif;">Take a photo of your vehicle</div>
+      <div style="font-size:12px;color:rgba(255,255,255,.6);">Align rear number plate inside yellow guide box</div>
+    </div>
+
+    <div class="camera-fill">
+      <!-- Real User Rapido Vehicle Rear Photo Feed -->
+      <img src="rapido_vehicle_rear.jpg" alt="Rapido Vehicle Camera Feed" class="vehicle-photo-feed"/>
+
+      <!-- Floating Camera Guidance Pill -->
+      <div class="vehicle-guidance-pill">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="#FFC107"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 15h2v-6h-2v6zm0-8h2V7h-2v2z"/></svg>
+        Fit vehicle & plate inside guide
+      </div>
+
+      <!-- Viewfinder Overlay Box with Corner Brackets & License Plate Target -->
+      <div class="vehicle-rect-overlay">
+        <div class="corner tl"></div><div class="corner tr"></div>
+        <div class="corner bl"></div><div class="corner br"></div>
+
+        <!-- Glowing License Plate Target Box over KA 03 JK 1234 -->
+        <div class="plate-scan-box">
+          🎯 ALIGNED: KA 03 JK 1234
+        </div>
+      </div>
+
+      <div class="cam-hint">Ensure number plate is clear & unblurred</div>
+
+      <div class="cam-bar">
+        <button class="cam-action" onclick="toggleFlash()">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="white"><path d="M7 2v11h3v9l7-12h-4l4-8z"/></svg>
+        </button>
+        <button class="shutter" onclick="goTo(7)"><div class="shutter-inner"></div></button>
+        <div style="width:44px;"></div>
+      </div>
+    </div>
+    <div class="gesture-bar dark-mode"><div class="gesture-pill"></div></div>
+  </div>
+
+  <!-- ══ SCREEN 7: PROCESSING ══ -->
+  <div class="screen" id="screen7">
+    <div class="app-bar">
+      <button class="icon-btn" onclick="goTo(6)">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#000" stroke-width="2.5"><path d="M19 12H5M12 5l-7 7 7 7"/></svg>
+      </button>
+      <div class="app-bar-title">Verification</div>
+    </div>
+
+    <div style="padding:0 16px 8px;">
+      <div class="stepper" style="margin-bottom:0;">
+        <div class="stp" onclick="goTo(4)"><div class="stp-circle done"></div><div class="stp-label done">Selfie</div></div>
+        <div class="stp-connector done"></div>
+        <div class="stp" onclick="goTo(6)"><div class="stp-circle done"></div><div class="stp-label done">Vehicle</div></div>
+        <div class="stp-connector done"></div>
+        <div class="stp" onclick="goTo(7)"><div class="stp-circle active">3</div><div class="stp-label active">Review</div></div>
+      </div>
+    </div>
+
+    <div class="proc-body">
+      <div class="spinner"></div>
+      <div style="font-size:20px;font-weight:800;color:#000;font-family:'Google Sans',sans-serif;">Verifying your photos</div>
+      <div style="font-size:14px;color:#555;">Please wait while we check the details.</div>
+
+      <div style="display:flex;align-items:center;gap:10px;background:#FFF8E1;border:1px solid #FFE082;border-radius:12px;padding:12px 16px;width:100%;">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="#F57F17"><path d="M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zm-6 9c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm3.1-9H8.9V6c0-1.71 1.39-3.1 3.1-3.1 1.71 0 3.1 1.39 3.1 3.1v2z"/></svg>
+        <span style="font-size:13px;color:#7B5A00;font-weight:500;">Secure AI processing in progress...</span>
+      </div>
+    </div>
+    <div class="gesture-bar"><div class="gesture-pill"></div></div>
+  </div>
+
+  <!-- ══ SCREEN 8: SUCCESS ══ -->
+  <div class="screen" id="screen8">
+    <div class="app-bar">
+      <div style="width:40px;"></div>
+      <div class="app-bar-title" style="text-align:center;">Verification</div>
+      <div style="width:40px;"></div>
+    </div>
+
+    <div style="padding:0 16px 8px;">
+      <div class="stepper" style="margin-bottom:0;">
+        <div class="stp" onclick="goTo(4)"><div class="stp-circle done"></div><div class="stp-label done">Selfie</div></div>
+        <div class="stp-connector done"></div>
+        <div class="stp" onclick="goTo(6)"><div class="stp-circle done"></div><div class="stp-label done">Vehicle</div></div>
+        <div class="stp-connector done"></div>
+        <div class="stp" onclick="goTo(8)"><div class="stp-circle done"></div><div class="stp-label done">Review</div></div>
+      </div>
+    </div>
+
+    <div class="result-body">
+      <div class="result-icon success">✓</div>
+      <div class="result-title">You're Verified!</div>
+      <div style="font-size:14px;color:#555;">Driver and vehicle match successfully.</div>
+
+      <div class="info-card">
+        <div class="info-row">
+          <div style="display:flex;align-items:center;gap:10px;">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="#666"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
+            Driver Verified
+          </div>
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="#00C853"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
+        </div>
+        <div class="info-row">
+          <div style="display:flex;align-items:center;gap:10px;">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="#666"><path d="M18.92 6.01C18.72 5.42 18.16 5 17.5 5h-11c-.66 0-1.21.42-1.42 1.01L3 12v8c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-1h12v1c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-8l-2.08-5.99z"/></svg>
+            Vehicle Verified
+          </div>
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="#00C853"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
+        </div>
+      </div>
+
+      <div class="mt-a" style="width:100%;">
+        <button class="btn-verification-start" onclick="goTo(10)">Continue to Home</button>
+      </div>
+    </div>
+    <div class="gesture-bar"><div class="gesture-pill"></div></div>
+  </div>
+
+  <!-- ══ SCREEN 9: RETRY / FAILED ══ -->
+  <div class="screen" id="screen9">
+    <div class="app-bar">
+      <button class="icon-btn" onclick="goTo(7)">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#000" stroke-width="2.5"><path d="M19 12H5M12 5l-7 7 7 7"/></svg>
+      </button>
+      <div class="app-bar-title">Verification</div>
+    </div>
+
+    <div style="padding:0 16px 8px;">
+      <div class="stepper" style="margin-bottom:0;">
+        <div class="stp" onclick="goTo(4)"><div class="stp-circle done"></div><div class="stp-label done">Selfie</div></div>
+        <div class="stp-connector done"></div>
+        <div class="stp" onclick="goTo(6)"><div class="stp-circle done"></div><div class="stp-label done">Vehicle</div></div>
+        <div class="stp-connector done"></div>
+        <div class="stp" onclick="goTo(9)"><div class="stp-circle error"></div><div class="stp-label" style="color:var(--red);">Review</div></div>
+      </div>
+    </div>
+
+    <div class="result-body">
+      <div class="result-icon fail">✕</div>
+      <div class="result-title">We couldn't verify</div>
+      <div style="font-size:14px;color:#555;">Please check the following and try again.</div>
+
+      <div class="fail-card">
+        <div class="fail-item">Face is clearly visible</div>
+        <div class="fail-item">No sunglasses or helmet</div>
+        <div class="fail-item">Number plate is clear and not blurry</div>
+      </div>
+
+      <div class="mt-a" style="width:100%;">
+        <button class="btn-verification-start" onclick="goTo(4)">Try Again</button>
+      </div>
+    </div>
+    <div class="gesture-bar"><div class="gesture-pill"></div></div>
+  </div>
+
+  <!-- ══ SCREEN 10: DONE STATE ══ -->
+  <div class="screen" id="screen10">
+    <!-- Header -->
+    <div class="rapido-header">
+      <div class="rapido-brand">
+        <div class="rapido-dots">
+          <div class="rapido-dot"></div><div class="rapido-dot"></div><div class="rapido-dot"></div>
+          <div class="rapido-dot"></div><div class="rapido-dot"></div><div class="rapido-dot"></div>
+        </div>
+        <span class="rapido-title">rapido</span>
+      </div>
+
+      <div class="header-online-pill">
+        <div class="online-dot-black"></div>
+        <span>You're Online</span>
+      </div>
+
+      <button class="header-bell-btn">
+        <svg width="22" height="24" viewBox="0 0 24 24" fill="none" stroke="#000000" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+        <div class="bell-badge">3</div>
+      </button>
+    </div>
+
+    <!-- Done Content Area -->
+    <div class="done-content-area">
+      <!-- Upper Map Background -->
+      <div class="done-map-bg">
+        <div class="map-bg-grid"></div>
+        <svg style="position:absolute;inset:0;width:100%;height:100%;" viewBox="0 0 360 220" preserveAspectRatio="none">
+          <line x1="0" y1="110" x2="360" y2="110" stroke="#E2ECEE" stroke-width="14"/>
+          <line x1="180" y1="0" x2="180" y2="220" stroke="#E2ECEE" stroke-width="12"/>
+          <line x1="0" y1="50" x2="360" y2="50" stroke="#EDF4F5" stroke-width="6"/>
+          <line x1="90" y1="0" x2="90" y2="220" stroke="#EDF4F5" stroke-width="6"/>
+          <line x1="270" y1="0" x2="270" y2="220" stroke="#EDF4F5" stroke-width="6"/>
+          <rect x="25" y="10" width="45" height="30" rx="4" fill="#E2F2E5"/>
+          <rect x="200" y="20" width="55" height="40" rx="4" fill="#E2F2E5"/>
+        </svg>
+        <div class="map-pin-pulse"><div class="map-pin-core"></div></div>
+      </div>
+
+      <!-- Floating Cards at Bottom -->
+      <div class="done-cards-container">
+        <!-- You're Verified Card (Clickable to view Rider App Screen 11) -->
+        <div class="verified-banner-card" onclick="goTo(11)">
+          <div class="verified-icon-circle">
+            <svg width="22" height="24" viewBox="0 0 24 28" fill="none">
+              <path d="M12 2L3 6v10c0 7.5 5.5 13.5 9 15 3.5-1.5 9-7.5 9-15V6l-9-4z" fill="#FFC107"/>
+              <path d="M12 2L3 6v10c0 7.5 5.5 13.5 9 15 3.5-1.5 9-7.5 9-15V6l-9-4z" stroke="#000000" stroke-width="2"/>
+              <path d="M7 15l4 4 7-8" stroke="#000000" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </div>
+          <div class="verified-text-group">
+            <div class="verified-card-title">You're Verified</div>
+            <div class="verified-card-sub">Tap to see rider app verification badge &gt;</div>
+          </div>
+          <svg class="verified-chevron" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#999999" stroke-width="2.5"><path d="M9 18l6-6-6-6"/></svg>
+        </div>
+
+        <!-- Today's Summary Card -->
+        <div class="todays-summary-card">
+          <div class="summary-card-header">Today's Summary</div>
+          <div class="summary-stats-grid">
+            <div class="summary-stat-box">
+              <div class="stat-amount">₹1,250</div>
+              <div class="stat-label-text">Earnings</div>
+            </div>
+            <div class="summary-stat-box">
+              <div class="stat-amount">6</div>
+              <div class="stat-label-text">Rides</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Bottom Nav -->
+    <div class="reference-bottom-nav">
+      <div class="ref-nav-item active" onclick="goTo(1)">
+        <div class="ref-nav-icon-container"><svg width="22" height="22" viewBox="0 0 24 24" fill="#FFC107"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg></div>
+        <span>Home</span>
+      </div>
+      <div class="ref-nav-item">
+        <div class="ref-nav-icon-container"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#666" stroke-width="2"><path d="M12 1v22M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg></div>
+        <span>Earnings</span>
+      </div>
+      <div class="ref-nav-item">
+        <div class="ref-nav-icon-container"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#666" stroke-width="2"><rect x="4" y="4" width="16" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="4" y1="10" x2="20" y2="10"/></svg></div>
+        <span>Bookings</span>
+      </div>
+      <div class="ref-nav-item">
+        <div class="ref-nav-icon-container">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#666" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+          <div class="yellow-inbox-dot"></div>
+        </div>
+        <span>Inbox</span>
+      </div>
+      <div class="ref-nav-item">
+        <div class="ref-nav-icon-container"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#666" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></div>
+        <span>Profile</span>
+      </div>
+    </div>
+    <div class="gesture-bar"><div class="gesture-pill"></div></div>
+  </div>
+
+  <!-- ══ SCREEN 11: RIDER VIEW — DRIVER & VEHICLE VERIFIED ══ -->
+  <div class="screen" id="screen11">
+    <!-- Top Rider App Bar -->
+    <div class="rider-top-bar">
+      <button class="icon-btn" onclick="goTo(10)">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#000" stroke-width="2.5"><path d="M19 12H5M12 5l-7 7 7 7"/></svg>
+      </button>
+      <div class="rider-header-title">Driver on the way</div>
+      <button class="icon-btn">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#F44336" stroke-width="2.5"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+      </button>
+    </div>
+
+    <!-- Map View with Live Driver Marker & Route Line -->
+    <div class="rider-map-view">
+      <div class="map-bg-grid"></div>
+      
+      <!-- Route Polyline SVG -->
+      <svg style="position:absolute;inset:0;width:100%;height:100%;" viewBox="0 0 360 300" preserveAspectRatio="none">
+        <path d="M 110 90 Q 180 140 250 210" stroke="#FFC107" stroke-width="6" stroke-linecap="round" fill="none" stroke-dasharray="8 4"/>
+      </svg>
+
+      <!-- Driver Moving Bike Pin -->
+      <div class="rider-driver-pin">
+        <div class="pin-time-chip">2 min</div>
+        <div class="pin-bike-badge">
+          <img src="rapido_bike.png" alt="Bike" style="width:28px;height:28px;object-fit:contain;"/>
+        </div>
+      </div>
+
+      <!-- Pickup Destination Pin -->
+      <div class="rider-pickup-pin">
+        <div class="pickup-dot-pulse"></div>
+        <span>Pickup</span>
+      </div>
+    </div>
+
+    <!-- Rider Bottom Sheet Card -->
+    <div class="rider-bottom-sheet">
+      <div class="sheet-handle-bar"></div>
+
+      <!-- Status Header -->
+      <div class="rider-status-header">
+        <div class="arrival-time-text">Arriving in 2 mins</div>
+        <div class="eta-pill">On Time</div>
+      </div>
+
+      <!-- Verified Driver Badge Card -->
+      <div class="driver-verified-card">
+        <div class="driver-avatar-wrap">
+          <div class="driver-avatar-circle">
+            <img src="indian_driver_avatar.png" alt="Aman Kumar" style="width:100%;height:100%;object-fit:cover;"/>
+          </div>
+          <div class="badge-check-icon">✓</div>
+        </div>
+
+        <div class="driver-info-details">
+          <div class="driver-name-row">
+            <span class="driver-name">Aman Kumar</span>
+            <div class="rating-badge">⭐ 4.8</div>
+          </div>
+
+          <!-- Verified Badge -->
+          <div class="verified-driver-pill">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="#00C853"><path d="M12 2L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm-2 16l-4-4 1.41-1.41L9 15.17l7.59-7.59L18 9l-9 9z"/></svg>
+            <span>Verified Driver & Vehicle</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Vehicle Card -->
+      <div class="vehicle-details-card">
+        <div class="vehicle-model-name">Hero Splendor Plus</div>
+        <div class="vehicle-plate-badge">KA 03 JK 1234</div>
+      </div>
+
+      <!-- Quick Action Buttons -->
+      <div class="rider-action-row">
+        <button class="rider-action-btn call-btn">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+          Call
+        </button>
+        <button class="rider-action-btn chat-btn">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+          Safety Chat
+        </button>
+      </div>
+    </div>
+    <div class="gesture-bar"><div class="gesture-pill"></div></div>
+  </div>
+
+</div><!-- /phone -->
+
+<!-- Progress dots -->
+<div class="prog-dots" id="dots"></div>
+
+<!-- External Nav -->
+<div class="ext-nav" id="extNav">
+  <button onclick="goTo(1)" id="nb1">1. Home</button>
+  <button onclick="goTo(2)" id="nb2">2. Safety</button>
+  <button onclick="goTo(3)" id="nb3">3. Intro</button>
+  <button onclick="goTo(4)" id="nb4">4. Selfie</button>
+  <button onclick="goTo(5)" id="nb5">5. Captured</button>
+  <button onclick="goTo(6)" id="nb6">6. Vehicle</button>
+  <button onclick="goTo(7)" id="nb7">7. Processing</button>
+  <button onclick="goTo(8)" id="nb8">8. Success</button>
+  <button onclick="goTo(9)" id="nb9">9. Retry</button>
+  <button onclick="goTo(10)" id="nb10">10. Done</button>
+  <button onclick="goTo(11)" id="nb11">11. Rider View</button>
+</div>
+
+</div><!-- /scene -->
+
+<script>
+let cur = 1;
+const TOTAL = 11;
+const dotsEl = document.getElementById('dots');
+
+for(let i=1;i<=TOTAL;i++){
+  const d=document.createElement('div');
+  d.className='d'+(i===1?' active':'');
+  d.id='d'+i;
+  d.onclick=()=>goTo(i);
+  dotsEl.appendChild(d);
+}
+
+let procTimer = null;
+let homeToasterTimer = null;
+
+function triggerHomeToaster(){
+  const ts = document.getElementById('homeToasterSheet');
+  const bd = document.getElementById('homeBackdrop');
+  if(!ts) return;
+  ts.classList.remove('visible');
+  if(bd) bd.classList.remove('visible');
+  if(homeToasterTimer) clearTimeout(homeToasterTimer);
+  
+  homeToasterTimer = setTimeout(()=>{
+    if(bd) bd.classList.add('visible');
+    ts.classList.add('visible');
+  }, 3000);
+}
+
+function goTo(n){
+  if(procTimer){ clearTimeout(procTimer); procTimer = null; }
+  const ov=document.getElementById('overlay');
+  ov.style.opacity='1';
+  setTimeout(()=>{
+    document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+    document.getElementById('screen'+n).classList.add('active');
+    cur=n;
+    sync();
+    ov.style.opacity='0';
+
+    if(n === 1){
+      triggerHomeToaster();
+    }
+    if(n === 7){
+      procTimer = setTimeout(()=>{
+        goTo(8);
+      }, 3000);
+    }
+  },140);
+}
+
+function sync(){
+  for(let i=1;i<=TOTAL;i++){
+    const d=document.getElementById('d'+i);
+    const b=document.getElementById('nb'+i);
+    if(d) d.className='d'+(i===cur?' active':i<cur?' done':'');
+    if(b) b.className=i===cur?'an':'';
+  }
+  const isCameraScreen = [4, 6].includes(cur);
+  const sb = document.getElementById('statusBar');
+  sb.classList.toggle('dark-mode', isCameraScreen);
+}
+
+function toggleFlash(){
+  const b=document.getElementById('flashBtn');
+  const on=b.style.background==='rgba(255,193,7,0.3)';
+  b.style.background=on?'rgba(255,255,255,0.12)':'rgba(255,193,7,0.3)';
+}
+
+sync();
+triggerHomeToaster();
+</script>
+</body>
+</html>
