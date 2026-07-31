@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>Rapido – 11-Screen Wireframe Canvas</title>
+<link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700;800;900&family=Google+Sans:wght@500;700;800&display=swap" rel="stylesheet"/>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+:root{
+  --rapido-yellow:#FFB800;
+  --rapido-yellow-bright:#FFC107;
+  --rapido-yellow-pill:#FFD54F;
+  --rapido-yellow-light:#FFF8E1;
+  --green:#00C853;
+  --red:#F44336;
+}
+body{
+  font-family:'Roboto',sans-serif;
+  background:linear-gradient(135deg,#0a0b10 0%,#1a1c29 50%,#121420 100%);
+  min-height:100vh;
+  padding:32px 24px;
+  color:white;
+  -webkit-font-smoothing:antialiased;
+}
+
+/* ─── CANVAS HEADER ─── */
+.canvas-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  max-width: 1800px;
+  margin: 0 auto 28px;
+  padding-bottom: 20px;
+  border-bottom: 1px solid rgba(255,255,255,0.12);
+}
+
+.brand-title-wrap {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.rapido-dots{
+  display:grid;
+  grid-template-columns:repeat(3,5px);
+  gap:3px;
+}
+.rapido-dot{width:5px;height:5px;background:#FFC107;border-radius:1px;}
+
+.header-h1 {
+  font-size: 24px;
+  font-weight: 900;
+  font-family: 'Google Sans', sans-serif;
+  color: white;
+  letter-spacing: -0.5px;
+}
+
+.header-sub {
+  font-size: 13px;
+  color: rgba(255,255,255,0.55);
+  margin-top: 2px;
+}
+
+.nav-links {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.nav-btn {
+  background: rgba(255,255,255,0.08);
+  border: 1px solid rgba(255,255,255,0.18);
+  color: white;
+  padding: 10px 20px;
+  border-radius: 100px;
+  font-size: 13px;
+  font-weight: 700;
+  text-decoration: none;
+  transition: all 0.2s;
+  font-family: 'Google Sans', sans-serif;
+}
+
+.nav-btn.primary {
+  background: #FFC107;
+  color: #000;
+  border-color: #FFC107;
+  box-shadow: 0 4px 12px rgba(255,193,7,0.3);
+}
+
+.nav-btn:hover {
+  transform: translateY(-1px);
+}
+
+/* ─── CANVAS GRID ─── */
+.canvas-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 36px 28px;
+  justify-content: center;
+  max-width: 1800px;
+  margin: 0 auto;
+}
+
+.screen-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+}
+
+.card-badge {
+  background: rgba(255, 193, 7, 0.15);
+  border: 1px solid rgba(255, 193, 7, 0.4);
+  color: #FFC107;
+  padding: 6px 14px;
+  border-radius: 100px;
+  font-size: 12px;
+  font-weight: 800;
+  font-family: 'Google Sans', sans-serif;
+  letter-spacing: 0.3px;
+}
+
+/* Phone Frame Mini scale */
+.phone-frame {
+  width: 320px;
+  height: 690px;
+  background: #fff;
+  border-radius: 28px;
+  position: relative;
+  overflow: hidden;
+  box-shadow:
+    0 0 0 2px #222,
+    0 0 0 3px #151515,
+    0 0 0 8px #0d0d0d,
+    0 16px 40px rgba(0,0,0,.6);
+  transform: scale(0.96);
+  transform-origin: top center;
+  transition: transform 0.2s;
+}
+
+.phone-frame:hover {
+  transform: scale(1);
+  box-shadow:
+    0 0 0 2px #FFC107,
+    0 0 0 4px #151515,
+    0 0 0 9px #0d0d0d,
+    0 20px 50px rgba(255,193,7,.25);
+}
+
+.iframe-screen {
+  width: 360px;
+  height: 780px;
+  border: none;
+  transform: scale(0.888888);
+  transform-origin: top left;
+  pointer-events: none;
+}
+</style>
+</head>
+<body>
+
+<!-- Header Bar -->
+<div class="canvas-header">
+  <div class="brand-title-wrap">
+    <div class="rapido-dots">
+      <div class="rapido-dot"></div><div class="rapido-dot"></div><div class="rapido-dot"></div>
+      <div class="rapido-dot"></div><div class="rapido-dot"></div><div class="rapido-dot"></div>
+    </div>
+    <div>
+      <h1 class="header-h1">Rapido Driver Verification — Wireframe Canvas</h1>
+      <div class="header-sub">Complete 11-Screen UX Flow Architecture & Rider Verification View</div>
+    </div>
+  </div>
+
+  <div class="nav-links">
+    <a href="index.html" class="nav-btn primary">📱 Interactive Phone Mode</a>
+    <a href="https://github.com/aayu2908/rapido-aayush" target="_blank" class="nav-btn">🐙 GitHub Repo</a>
+  </div>
+</div>
+
+<!-- 11-Screen Canvas Grid -->
+<div class="canvas-grid">
+
+  <!-- Screen 1 -->
+  <div class="screen-card">
+    <div class="card-badge">01. Home Toaster Trigger</div>
+    <div class="phone-frame">
+      <iframe class="iframe-screen" src="index.html#1"></iframe>
+    </div>
+  </div>
+
+  <!-- Screen 2 -->
+  <div class="screen-card">
+    <div class="card-badge">02. Safety Parked Check</div>
+    <div class="phone-frame">
+      <iframe class="iframe-screen" src="index.html#2"></iframe>
+    </div>
+  </div>
+
+  <!-- Screen 3 -->
+  <div class="screen-card">
+    <div class="card-badge">03. Verification Intro</div>
+    <div class="phone-frame">
+      <iframe class="iframe-screen" src="index.html#3"></iframe>
+    </div>
+  </div>
+
+  <!-- Screen 4 -->
+  <div class="screen-card">
+    <div class="card-badge">04. Driver Selfie Camera</div>
+    <div class="phone-frame">
+      <iframe class="iframe-screen" src="index.html#4"></iframe>
+    </div>
+  </div>
+
+  <!-- Screen 5 -->
+  <div class="screen-card">
+    <div class="card-badge">05. Selfie Captured</div>
+    <div class="phone-frame">
+      <iframe class="iframe-screen" src="index.html#5"></iframe>
+    </div>
+  </div>
+
+  <!-- Screen 6 -->
+  <div class="screen-card">
+    <div class="card-badge">06. Vehicle Rear Camera</div>
+    <div class="phone-frame">
+      <iframe class="iframe-screen" src="index.html#6"></iframe>
+    </div>
+  </div>
+
+  <!-- Screen 7 -->
+  <div class="screen-card">
+    <div class="card-badge">07. AI Processing Review</div>
+    <div class="phone-frame">
+      <iframe class="iframe-screen" src="index.html#7"></iframe>
+    </div>
+  </div>
+
+  <!-- Screen 8 -->
+  <div class="screen-card">
+    <div class="card-badge">08. Verification Success</div>
+    <div class="phone-frame">
+      <iframe class="iframe-screen" src="index.html#8"></iframe>
+    </div>
+  </div>
+
+  <!-- Screen 9 -->
+  <div class="screen-card">
+    <div class="card-badge">09. Failure & Retry Tips</div>
+    <div class="phone-frame">
+      <iframe class="iframe-screen" src="index.html#9"></iframe>
+    </div>
+  </div>
+
+  <!-- Screen 10 -->
+  <div class="screen-card">
+    <div class="card-badge">10. Driver Verified Home</div>
+    <div class="phone-frame">
+      <iframe class="iframe-screen" src="index.html#10"></iframe>
+    </div>
+  </div>
+
+  <!-- Screen 11 -->
+  <div class="screen-card">
+    <div class="card-badge" style="background:rgba(0,200,83,0.15);border-color:rgba(0,200,83,0.4);color:#00C853;">11. Rider App View (Verified Badge)</div>
+    <div class="phone-frame">
+      <iframe class="iframe-screen" src="index.html#11"></iframe>
+    </div>
+  </div>
+
+</div>
+
+<script>
+// Hash handling inside iframe
+window.addEventListener('message', function(e){});
+</script>
+</body>
+</html>

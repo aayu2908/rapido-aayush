@@ -1739,6 +1739,7 @@ body{
   <button onclick="goTo(9)" id="nb9">9. Retry</button>
   <button onclick="goTo(10)" id="nb10">10. Done</button>
   <button onclick="goTo(11)" id="nb11">11. Rider View</button>
+  <button onclick="window.location.href='canvas.html'" style="background:#FFC107;color:#000;font-weight:800;box-shadow:0 2px 8px rgba(255,193,7,0.4);">🖼️ View All 11 Canvas</button>
 </div>
 
 </div><!-- /scene -->
@@ -1767,32 +1768,43 @@ function triggerHomeToaster(){
   if(bd) bd.classList.remove('visible');
   if(homeToasterTimer) clearTimeout(homeToasterTimer);
   
+  if(window.location.hash) {
+    // If in iframe canvas mode, show immediately
+    if(bd) bd.classList.add('visible');
+    ts.classList.add('visible');
+    return;
+  }
+
   homeToasterTimer = setTimeout(()=>{
     if(bd) bd.classList.add('visible');
     ts.classList.add('visible');
   }, 3000);
 }
 
-function goTo(n){
+function goTo(n, skipAnimation){
   if(procTimer){ clearTimeout(procTimer); procTimer = null; }
   const ov=document.getElementById('overlay');
-  ov.style.opacity='1';
-  setTimeout(()=>{
+  if(!skipAnimation) ov.style.opacity='1';
+  
+  const applyChange = ()=>{
     document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
     document.getElementById('screen'+n).classList.add('active');
     cur=n;
     sync();
-    ov.style.opacity='0';
+    if(!skipAnimation) ov.style.opacity='0';
 
     if(n === 1){
       triggerHomeToaster();
     }
-    if(n === 7){
+    if(n === 7 && !window.location.hash){
       procTimer = setTimeout(()=>{
         goTo(8);
       }, 3000);
     }
-  },140);
+  };
+
+  if(skipAnimation) applyChange();
+  else setTimeout(applyChange, 140);
 }
 
 function sync(){
@@ -1813,8 +1825,14 @@ function toggleFlash(){
   b.style.background=on?'rgba(255,255,255,0.12)':'rgba(255,193,7,0.3)';
 }
 
-sync();
-triggerHomeToaster();
+// Check Hash on Init for Canvas Rendering
+const initHash = window.location.hash.replace('#','');
+if(initHash && !isNaN(initHash) && parseInt(initHash)>=1 && parseInt(initHash)<=11){
+  goTo(parseInt(initHash), true);
+} else {
+  sync();
+  triggerHomeToaster();
+}
 </script>
 </body>
 </html>
